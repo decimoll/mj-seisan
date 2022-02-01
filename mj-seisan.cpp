@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <iomanip>
 
 // 今の半荘の素点
 std::vector<double> current_raw_scores(4);
@@ -70,13 +72,14 @@ std::string format_time(time_t t_t)
 
 void get_names()
 {
-    std::cout << "プレーヤー4人の名前: ";
+    std::cout << "プレイヤー4人の名前: ";
     for (int i=0; i<4; i++) {
         std::cin >> names[i]; 
     }
     for (int i=0; i<4; i++) {
         std::cout << i + 1 << ": " << names[i] << std::endl;
     }
+    puts("");
 }
 
 void get_qijia_no()
@@ -122,6 +125,7 @@ int calc_fee()
 
 void calc()
 {
+    // その半荘のスコア計算
     for (int i = qijia - 1; i < qijia + 3; i++) {
         current_raw_scores[i % 4] += 0.1*(4 - i);
     }
@@ -130,7 +134,6 @@ void calc()
         current_raw_scores[i % 4] -= 0.1*(4 - i);
         current_raw_scores[i % 4] = (int)(current_raw_scores[i % 4]);
     }
-
 
     scoress.push_back(current_raw_scores);
 
@@ -142,17 +145,7 @@ void calc()
 
     for (int i = 0; i < 4; i++) {
         scoress[scoress.size() - 1][i] = current_raw_scores[i] / 10 - origin;
-        std::cout << current_raw_scores[i] << "a";
-        std::cout << scoress[scoress.size() - 1][i] << "b";
         scoress[scoress.size() - 1][i] += umaoka[(int)(ranking[i] - 1)];
-        std::cout << scoress[scoress.size() - 1][i] << "c";
-        std::cout << umaoka[i] << "d";
-        std::cout << ranking[i] << "f";
-    }
-
-
-    for(int i = 0; i < 4; i++) {
-        //std::cout << scoress[scoress.size()-1][i];
     }
 
     for (int i = 0; i < 4; i++) {
@@ -178,60 +171,69 @@ void calc()
     }
 }
 
+// プラス、プラマイの記号を足すついでに小数点第二位以下を切る
 std::string add_pm(double j)
 {
-    std::string s;
+    std::string s = "";
     if (j == 0) {
         s = "±";
     }
     else if (j > 0) {
         s = "+";
     }
-    return s + std::to_string(j);
+    char str[24];
+    sprintf(str, "%.1f", j);
+    return s + std::string(str);
 }
 void output()
 {
-    std::cout << std::endl << "------------------" << std::endl;
-    std::cout << "開始時間: " << format_time(start_ut);
+    printf("\n--------------------------------\n");
+    std::cout << "開始時刻: " << format_time(start_ut);
     std::cout << "現在時刻: " << format_time(time(NULL));
-    std::cout << "経過時間: " << format_time(time(NULL)-start_ut);
+    time_t past_time = time(NULL) - start_ut;
+    int past_time_h = past_time / 3600;
+    int past_time_m = past_time % 3600 / 60;
+    int past_time_s = past_time % 60;
+    printf("経過時間: %02d:%02d:%02d\n", past_time_h, past_time_m, past_time_s);
     std::cout << "ウマ: 5-10\nオカあり\n原点: 30000点" << std::endl;
+
     std::cout << " 回 ";
     for (int i = 0; i < 4; i++) {
-        std::cout << names[i] << " ";
+        std::cout << std::setw(7) << names[i];
     }
     std::cout << std::endl;
     for (int i = 0; i < scoress.size(); i++) {
-        std::cout << i + 1 << " ";
+        printf(" %02d ", i + 1);
         for (int j : raw_scoress[i]) {
-            std::cout << j*100 << " ";
+            printf("%7d", j*100);
         }
-        std::cout << std::endl;
+        puts("");
+        printf("    ");
         for (double j : scoress[i]) {
-            std::cout << add_pm(j) << " ";
+            printf("%7s", add_pm(j).c_str());
         }
-        std::cout << std::endl;
+        puts("");
     }
 
     std::cout << " 計 ";
     for (double i : total_scores) {
-        std::cout << add_pm(i) << " ";
+        printf("%7s", add_pm(i).c_str());
     }
     std::cout << std::endl;
 
     std::cout << "順位";
     for (double i : ranking) {
-        std::cout << i << " ";
+        std::cout << std::setw(7) << i;
     }
     std::cout << std::endl;
 
     std::cout << "料金";
     for (double i : fees) {
-        std::cout << i << " ";
+        std::cout << std::setw(7) << i;
     }
     std::cout << std::endl;
-    std::cout << "料金総和: " << fee << std::endl;
-    std::cout << "---------------" << std::endl << std::endl;
+    printf("料金総和: %d円\n", fee);
+    printf("--------------------------------\n\n");
 }
 
 int main()
@@ -240,7 +242,7 @@ int main()
     getchar();
 
     start_ut = time(NULL);
-    std::cout << "開始時間: " << format_time(start_ut) << std::endl;
+    std::cout << "開始時刻: " << format_time(start_ut);
 
     get_names();
     while(1) {
