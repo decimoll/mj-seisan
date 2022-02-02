@@ -82,23 +82,98 @@ void get_names()
     puts("");
 }
 
+int add(int a, int b) {
+    return a + b;
+}
+
+int sub(int a, int b) {
+    return add(a, -b);
+}
+
+std::vector<int> eval(std::vector<std::string> &v) {
+    std::vector<int> v2;
+    for (const std::string& s : v) {
+        int tmp[2] = {0};
+        bool flg = 0;
+        bool aflg = 0;
+        bool sflg = 0;
+        for (int i = 0; i < s.size(); i++) {
+            if (s[i] == '+') {
+                if (aflg) {
+                    tmp[flg] = add(tmp[!flg], tmp[flg]);
+                }
+                else if (sflg) {
+                    tmp[flg] = sub(tmp[!flg], tmp[flg]);
+                }
+                aflg = 1;
+                sflg = 0;
+                tmp[!flg] = 0;
+                flg = !flg;
+            }
+            else if (s[i] == '-') {
+                if (aflg) {
+                    tmp[flg] = add(tmp[!flg], tmp[flg]);
+                }
+                else if (sflg) {
+                    tmp[flg] = sub(tmp[!flg], tmp[flg]);
+                }
+                aflg = 0;
+                sflg = 1;
+                tmp[!flg] = 0;
+                flg = !flg;
+            }
+            else if (s[i] - '0' < 0 || 9 < s[i] - '0') {
+                std::cout << "エラー: 数値と+-のみ入力可" << std::endl;
+                return std::vector<int>(4, 0);
+            }
+            else {
+                tmp[flg] = tmp[flg] * 10 + (s[i] - '0');
+            }
+        }
+        if (aflg) {
+            tmp[flg] = add(tmp[!flg], tmp[flg]);
+        }
+        else if (sflg) {
+            tmp[flg] = sub(tmp[!flg], tmp[flg]);
+        }
+        v2.push_back(tmp[flg]);
+    }
+    return v2;
+}
+
 void get_current_raw_scores()
 {
-    std::string current_raw_scores_tmp[4];
-    std::cout << "点数 / 100: ";
-    for (int i=0; i<4; i++) {
-        std::cin >> current_raw_scores_tmp[i];
-    }
-    //eval()
-    for (int i=0; i<4; i++) {
-        current_raw_scores[i] = std::stoi(current_raw_scores_tmp[i]);
-    }
-    int sum_raw_scores = 0;
-    for (int i=0; i<4; i++) {
-        sum_raw_scores += current_raw_scores[i];
-    }
-    if (sum_raw_scores != 1000) {
+    // よくわからないがこのgetchar()がないとエラー表示のifに行く
+    getchar();
+    while (1) {
+        std::vector<std::string> tmp;
+        std::string str, s;
+        std::cout << "点数 / 100: ";
+        std::getline(std::cin,str);
+        std::stringstream ss{str};
+        while (getline(ss, s, ' ')){
+            tmp.push_back(s);
+        }
+        if (tmp.size() != 4) {
+            printf("エラー: 入力が４つではありません。\n");
+            continue;
+        }
+        std::vector<int> tmp_int = eval(tmp);
 
+        for (int i = 0; i < 4; i++) {
+            current_raw_scores[i] = static_cast<double>(tmp_int[i]);
+        }
+
+        int sum_raw_scores = 0;
+        for (int i=0; i<4; i++) {
+            sum_raw_scores += current_raw_scores[i];
+        }
+        if (sum_raw_scores != 1000) {
+            printf("エラー: Σ=%d≠1000\n", sum_raw_scores);
+        }
+        else {
+            break;
+        }
     }
 }
 
