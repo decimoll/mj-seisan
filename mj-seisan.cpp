@@ -24,7 +24,7 @@ int fee;
 int umaoka[4] = {20+10, 5, -5, -10};
 int origin = 30;
 time_t start_ut;
-int qijia;
+std::vector<int> qijias;
 
 //降順ランキング
 void rank(std::vector<double> arr)
@@ -82,20 +82,6 @@ void get_names()
     puts("");
 }
 
-void get_qijia_no()
-{
-    std::cout << "起家の番号: ";
-    char tmp;
-    std::cin >> tmp;
-    if (tmp == 'd') {
-       std::cout << "削除する予定"; 
-    }
-    qijia = (int)(tmp - '0');
-    if (qijia <= 0 || qijia >= 5) {
-        std::cout << "不正な起家番号";
-    }
-}
-
 void get_current_raw_scores()
 {
     std::string current_raw_scores_tmp[4];
@@ -125,31 +111,38 @@ int calc_fee()
 
 void calc()
 {
-    // その半荘のスコア計算
-    for (int i = qijia - 1; i < qijia + 3; i++) {
-        current_raw_scores[i % 4] += 0.1*(4 - i);
+    if (current_raw_scores[0] == -65536) {
+        for (int i = 0; i < 4; i++) {
+            total_scores[i] = 0;
+        }
     }
-    rank(current_raw_scores);
-    for (int i = qijia - 1; i < qijia + 3; i++) {
-        current_raw_scores[i % 4] -= 0.1*(4 - i);
-        current_raw_scores[i % 4] = (int)(current_raw_scores[i % 4]);
-    }
+    else {
+        // その半荘のスコア計算
+        for (int i = qijias.back() - 1; i < qijias.back() + 3; i++) {
+            current_raw_scores[i % 4] += 0.1*(4 - i);
+        }
+        rank(current_raw_scores);
+        for (int i = qijias.back() - 1; i < qijias.back() + 3; i++) {
+            current_raw_scores[i % 4] -= 0.1*(4 - i);
+            current_raw_scores[i % 4] = (int)(current_raw_scores[i % 4]);
+        }
 
-    scoress.push_back(current_raw_scores);
+        scoress.push_back(current_raw_scores);
 
-    std::vector<int> tmp(4, 0);
-    raw_scoress.push_back(tmp);
-    for (int i = 0; i < 4; i++) {
-        raw_scoress[raw_scoress.size() - 1][i] = (int)current_raw_scores[i];
-    }
+        std::vector<int> tmp(4, 0);
+        raw_scoress.push_back(tmp);
+        for (int i = 0; i < 4; i++) {
+            raw_scoress[raw_scoress.size() - 1][i] = (int)current_raw_scores[i];
+        }
 
-    for (int i = 0; i < 4; i++) {
-        scoress[scoress.size() - 1][i] = current_raw_scores[i] / 10 - origin;
-        scoress[scoress.size() - 1][i] += umaoka[(int)(ranking[i] - 1)];
-    }
+        for (int i = 0; i < 4; i++) {
+            scoress[scoress.size() - 1][i] = current_raw_scores[i] / 10 - origin;
+            scoress[scoress.size() - 1][i] += umaoka[(int)(ranking[i] - 1)];
+        }
 
-    for (int i = 0; i < 4; i++) {
-        total_scores[i] += scoress[scoress.size() - 1][i];
+        for (int i = 0; i < 4; i++) {
+            total_scores[i] += scoress[scoress.size() - 1][i];
+        }
     }
     rank(total_scores);
     fee = calc_fee();
@@ -187,7 +180,7 @@ std::string add_pm(double j)
 }
 void output()
 {
-    printf("\n--------------------------------\n");
+    printf("\n====================================\n");
     std::cout << "開始時刻: " << format_time(start_ut);
     std::cout << "現在時刻: " << format_time(time(NULL));
     time_t past_time = time(NULL) - start_ut;
@@ -195,45 +188,138 @@ void output()
     int past_time_m = past_time % 3600 / 60;
     int past_time_s = past_time % 60;
     printf("経過時間: %02d:%02d:%02d\n", past_time_h, past_time_m, past_time_s);
+    printf("料金総和: %d 円\n", fee);
     std::cout << "ウマ: 5-10\nオカあり\n原点: 30000点" << std::endl;
 
-    std::cout << " 回 ";
+    printf("====================================\n");
+    std::cout << "    |";
     for (int i = 0; i < 4; i++) {
         std::cout << std::setw(7) << names[i];
+        if (i < 3) {
+            std::cout << "|";
+        }
     }
-    std::cout << std::endl;
     for (int i = 0; i < scoress.size(); i++) {
-        printf(" %02d ", i + 1);
-        for (int j : raw_scoress[i]) {
-            printf("%7d", j*100);
+        if (i == 0) {
+            printf("\n====‡=======‡=======‡=======‡=======\n");
+        }
+        else {
+            printf("\n----+-------+-------+-------+-------\n");
+        }
+        printf(" %02d |", i + 1);
+        for (int j = 0; j < 4; j++) {
+            printf("%7d", raw_scoress[i][j]*100);
+            if (j < 3) {
+                std::cout << "|";
+            }
         }
         puts("");
-        printf("    ");
-        for (double j : scoress[i]) {
-            printf("%7s", add_pm(j).c_str());
+        printf("    |");
+        for (int j = 0; j < 4; j++) {
+            printf("%7s", add_pm(scoress[i][j]).c_str());
+            if (j < 3) {
+                std::cout << "|";
+            }
         }
-        puts("");
     }
 
-    std::cout << " 計 ";
-    for (double i : total_scores) {
-        printf("%7s", add_pm(i).c_str());
+    printf("\n====‡=======‡=======‡=======‡=======\n");
+    std::cout << " 計 |";
+    for (int i = 0; i < 4; i++) {
+        printf("%7s", add_pm(total_scores[i]).c_str());
+        if (i < 3) {
+            std::cout << "|";
+        }
     }
     std::cout << std::endl;
 
-    std::cout << "順位";
-    for (double i : ranking) {
-        std::cout << std::setw(7) << i;
+    std::cout << "順位|";
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::setw(5) << ranking[i];
+        switch(ranking[i]) {
+        case 1:
+            std::cout << "st";
+            break;
+        case 2:
+            std::cout << "nd";
+            break;
+        case 3:
+            std::cout << "rd";
+            break;
+        case 4:
+            std::cout << "th";
+            break;
+        }
+        if (i < 3) {
+            std::cout << "|";
+        }
     }
     std::cout << std::endl;
 
-    std::cout << "料金";
-    for (double i : fees) {
-        std::cout << std::setw(7) << i;
+    std::cout << "料金|";
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::setw(7) << fees[i];
+        if (i < 3) {
+            std::cout << "|";
+        }
     }
     std::cout << std::endl;
-    printf("料金総和: %d円\n", fee);
-    printf("--------------------------------\n\n");
+    printf("====================================\n\n");
+}
+
+void del()
+{
+    for (int i = 0; i < 4; i++) {
+        total_scores[i] -= scoress.back()[i];
+    }
+    if (raw_scoress.size() > 1) {
+        for (int i = 0; i < 4; i++) {
+            total_scores[i] -= scoress[scoress.size() - 2][i];
+        }
+        for (int i = 0; i < 4; i++) {
+            current_raw_scores[i] = static_cast<double>(raw_scoress[raw_scoress.size() - 2][i]);
+        }
+        for (int i = 0; i < 2; i++) {
+            raw_scoress.pop_back();
+            scoress.pop_back();
+            qijias.pop_back();
+        }
+    }
+    else {
+        current_raw_scores[0] = -65536;
+        raw_scoress.pop_back();
+        scoress.pop_back();
+        qijias.pop_back();
+    }
+
+}
+
+void get_qijia_no()
+{
+    while (1) {
+        std::cout << "起家の番号: ";
+        char tmp;
+        std::cin >> tmp;
+        if (tmp == 'd') {
+            if (raw_scoress.size() > 0) {
+                del();
+                calc();
+                output();
+            }
+            else {
+                printf("エラー: 削除できるデータがありません。\n");
+            }
+            continue;
+        }
+        int tmp_int = static_cast<int>(tmp - '0');
+        if (tmp_int > 0 && tmp_int < 5) {
+            qijias.push_back(tmp_int);
+            break;
+        }
+        else {
+            std::cout << "1 <= 起家番号 <= 4\n";
+        }
+    }
 }
 
 int main()
