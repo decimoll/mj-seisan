@@ -1,6 +1,7 @@
-#include <bits/types/time_t.h>
+#include <time.h>
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <cmath>
